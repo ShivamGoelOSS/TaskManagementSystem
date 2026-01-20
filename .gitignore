@@ -3,4 +3,5 @@ target/
 *.tmp
 .idea/
 .vscode/
-.DS_Store
+.DS_Storeaws/
+awscliv2.zip
