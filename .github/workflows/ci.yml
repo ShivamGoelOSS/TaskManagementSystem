@@ -67,16 +67,20 @@ jobs:
       run: docker build -t taskmanager:${{ github.sha }} .
 
     - name: Scan Docker image with Trivy
-      uses: aquasecurity/trivy-action@master
+      uses: aquasecurity/trivy-action@0.20.0
       with:
         scan-type: 'image'
         scan-ref: 'taskmanager:${{ github.sha }}'
         format: 'sarif'
         output: 'trivy-results.sarif'
 
+    - name: Check if Trivy results exist
+      run: if [ -f trivy-results.sarif ]; then echo "trivy_exists=true" >> $GITHUB_ENV; fi
+      if: always()
+
     - name: Upload Trivy scan results to GitHub Security tab
       uses: github/codeql-action/upload-sarif@v3
-      if: always()
+      if: env.trivy_exists == 'true'
       with:
         sarif_file: 'trivy-results.sarif'
 
