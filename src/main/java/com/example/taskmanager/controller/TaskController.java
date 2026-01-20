@@ -1,3 +1,8 @@
+package com.example.taskmanager.controller;
+
+import com.example.taskmanager.model.Task;
+import com.example.taskmanager.service.TaskService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
