@@ -1,0 +1,37 @@
+name: CD Pipeline
+
+on:
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    types:
+      - completed
+  workflow_dispatch:
+
+jobs:
+  cd:
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Create kind cluster
+      uses: helm/kind-action@v1.8.0
+      with:
+        cluster_name: kind
+
+    - name: Deploy to Kubernetes
+      run: |
+        kubectl create deployment taskmanager --image=${{ secrets.DOCKERHUB_USERNAME }}/taskmanager:latest
+        kubectl expose deployment taskmanager --type=LoadBalancer --port=8080
+
+    - name: Wait for deployment
+      run: kubectl wait --for=condition=available --timeout=300s deployment/taskmanager
+
+    - name: Run dummy DAST
+      run: |
+        # Simple DAST: check if app is running
+        kubectl port-forward deployment/taskmanager 8080:8080 &
+        sleep 10
+        curl -f http://localhost:8080/api/tasks || exit 1
