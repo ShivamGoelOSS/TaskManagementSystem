@@ -5,6 +5,17 @@
 
 A simple Spring Boot application for managing tasks.
 
+## Technologies Used
+
+- **Framework:** Spring Boot 2.7.0
+- **Java Version:** 11
+- **Database:** H2 (in-memory)
+- **Build Tool:** Maven
+- **Containerization:** Docker with Eclipse Temurin base image
+- **CI/CD:** GitHub Actions
+- **Deployment:** AWS EKS (Kubernetes)
+- **Security Scanning:** CodeQL (SAST), OWASP Dependency Check (SCA), Trivy (Container scanning)
+
 ## How to run locally
 
 1. Ensure you have Java 11 and Maven installed.
@@ -24,6 +35,7 @@ A simple Spring Boot application for managing tasks.
 - POST /api/tasks - Create a new task
 - PUT /api/tasks/{id} - Update a task
 - DELETE /api/tasks/{id} - Delete a task
+- GET /actuator/health - Health check endpoint
 
 ## Docker
 
@@ -55,7 +67,14 @@ The CI pipeline performs:
 
 ### CD Pipeline
 
-The CD pipeline deploys to an AWS EKS cluster and performs a dummy DAST.
+The CD pipeline deploys to an AWS EKS cluster and performs dynamic application security testing (DAST) with LoadBalancer readiness verification.
+
+**Features:**
+- Automated deployment to Kubernetes with LoadBalancer service
+- Waits up to 5 minutes for LoadBalancer external IP to be assigned
+- Performs API endpoint testing through the LoadBalancer
+- Falls back to port-forwarding if LoadBalancer is not ready
+- Includes proper error handling and timeout management
 
 **Note:** Ensure your EKS cluster is already created and configured. The pipeline assumes the cluster exists and uses the provided credentials to update kubeconfig.
 
