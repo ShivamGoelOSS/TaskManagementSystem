@@ -34,15 +34,29 @@ jobs:
     - name: Wait for deployment
       run: kubectl wait --for=condition=available --timeout=300s deployment/taskmanager
 
+    - name: Wait for LoadBalancer
+      run: |
+        echo "Waiting for LoadBalancer to get external IP..."
+        for i in {1..30}; do
+          LB_URL=$(kubectl get svc taskmanager -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null)
+          if [ -n "$LB_URL" ] && [ "$LB_URL" != "<pending>" ]; then
+            echo "LoadBalancer ready: $LB_URL"
+            break
+          fi
+          echo "Waiting... ($i/30)"
+          sleep 10
+        done
+
     - name: Run dummy DAST
       run: |
         # Get the LoadBalancer URL
         LB_URL=$(kubectl get svc taskmanager -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-        if [ -z "$LB_URL" ]; then
-          echo "LoadBalancer not ready, using port-forward"
-          kubectl port-forward deployment/taskmanager 8080:8080 &
-          sleep 10
-          curl -f http://localhost:8080/api/tasks || exit 1
+        if [ -n "$LB_URL" ] && [ "$LB_URL" != "<pending>" ]; then
+          echo "Testing via LoadBalancer: $LB_URL"
+          curl -f --max-time 30 http://$LB_URL:8080/api/tasks || exit 1
         else
-          curl -f http://$LB_URL:8080/api/tasks || exit 1
+          echo "LoadBalancer not ready, using port-forward for testing"
+          kubectl port-forward deployment/taskmanager 8080:8080 &
+          sleep 5
+          curl -f --max-time 10 http://localhost:8080/api/tasks || exit 1
         fi
