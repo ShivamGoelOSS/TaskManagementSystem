@@ -16,22 +16,33 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Create kind cluster
-      uses: helm/kind-action@v1.8.0
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
       with:
-        cluster_name: kind
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+
+    - name: Update kubeconfig for EKS
+      run: aws eks update-kubeconfig --region ${{ secrets.AWS_REGION || 'us-east-1' }} --name ${{ secrets.EKS_CLUSTER_NAME || 'my-cluster' }}
 
     - name: Deploy to Kubernetes
       run: |
-        kubectl create deployment taskmanager --image=${{ secrets.DOCKERHUB_USERNAME }}/taskmanager:latest
-        kubectl expose deployment taskmanager --type=LoadBalancer --port=8080
+        kubectl create deployment taskmanager --image=${{ secrets.DOCKERHUB_USERNAME }}/taskmanager:latest --dry-run=client -o yaml | kubectl apply -f -
+        kubectl expose deployment taskmanager --type=LoadBalancer --port=8080 --dry-run=client -o yaml | kubectl apply -f -
 
     - name: Wait for deployment
       run: kubectl wait --for=condition=available --timeout=300s deployment/taskmanager
 
     - name: Run dummy DAST
       run: |
-        # Simple DAST: check if app is running
-        kubectl port-forward deployment/taskmanager 8080:8080 &
-        sleep 10
-        curl -f http://localhost:8080/api/tasks || exit 1
+        # Get the LoadBalancer URL
+        LB_URL=$(kubectl get svc taskmanager -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+        if [ -z "$LB_URL" ]; then
+          echo "LoadBalancer not ready, using port-forward"
+          kubectl port-forward deployment/taskmanager 8080:8080 &
+          sleep 10
+          curl -f http://localhost:8080/api/tasks || exit 1
+        else
+          curl -f http://$LB_URL:8080/api/tasks || exit 1
+        fi

@@ -55,10 +55,16 @@ The CI pipeline performs:
 
 ### CD Pipeline
 
-The CD pipeline deploys to a Kubernetes cluster using kind and performs a dummy DAST.
+The CD pipeline deploys to an AWS EKS cluster and performs a dummy DAST.
+
+**Note:** Ensure your EKS cluster is already created and configured. The pipeline assumes the cluster exists and uses the provided credentials to update kubeconfig.
 
 ### Secrets Configuration
 
 Configure the following GitHub Secrets:
 - DOCKERHUB_USERNAME: Your DockerHub username
 - DOCKERHUB_TOKEN: Your DockerHub access token
+- AWS_ACCESS_KEY_ID: Your AWS access key ID
+- AWS_SECRET_ACCESS_KEY: Your AWS secret access key
+- AWS_REGION: Your AWS region (optional, defaults to us-east-1)
+- EKS_CLUSTER_NAME: Your EKS cluster name (optional, defaults to my-cluster)
