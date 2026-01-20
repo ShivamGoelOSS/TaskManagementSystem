@@ -1,5 +1,8 @@
 # Task Management System
 
+[![CI](https://github.com/ShivamGoelOSS/TaskManagementSystem/actions/workflows/ci.yml/badge.svg)](https://github.com/ShivamGoelOSS/TaskManagementSystem/actions/workflows/ci.yml)
+[![CD](https://github.com/ShivamGoelOSS/TaskManagementSystem/actions/workflows/cd.yml/badge.svg)](https://github.com/ShivamGoelOSS/TaskManagementSystem/actions/workflows/cd.yml)
+
 A simple Spring Boot application for managing tasks.
 
 ## How to run locally
